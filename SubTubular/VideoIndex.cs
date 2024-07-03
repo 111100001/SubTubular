@@ -101,7 +101,7 @@ public sealed class VideoIndexRepository
         => FileDataStore.Delete(directory, FileExtension, keyPrefix, key, notAccessedForDays, simulate);
 }
 
-internal sealed class VideoIndex
+internal sealed class VideoIndex : IDisposable
 {
     private static readonly string[] nonDynamicVideoFieldNames = [nameof(Video.Title), nameof(Video.Description), nameof(Video.Keywords)];
     internal SemaphoreSlim AccessToken = new(1, 1);
@@ -299,5 +299,11 @@ internal sealed class VideoIndex
         }
 
         await CommitBatchChangeAsync();
+    }
+
+    public void Dispose()
+    {
+        Index.Dispose();
+        AccessToken.Dispose();
     }
 }
