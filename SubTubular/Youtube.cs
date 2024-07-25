@@ -353,7 +353,7 @@ public sealed class Youtube
         {
             channel.Writer.Complete();
             //if (t.Exception != null) throw t.Exception;
-        }).WithAggregateException();
+        }, cancellation).WithAggregateException();
 
         // start reading
         await foreach (var keyword in channel.Reader.ReadAllAsync(cancellation)) yield return keyword;
