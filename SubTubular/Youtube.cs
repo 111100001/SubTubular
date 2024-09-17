@@ -1,7 +1,5 @@
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
-using Microsoft.Extensions.Diagnostics.ResourceMonitoring;
 using SubTubular.Extensions;
 using YoutubeExplode;
 using YoutubeExplode.Channels;
@@ -21,7 +19,7 @@ public sealed record YoutubeSettings
     public ushort MaxUnindexedVideoBatchSize { get; set; }
 }
 
-public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndexRepo, IResourceMonitor resources)
+public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndexRepo)
 {
     public static string GetVideoUrl(string videoId) => "https://youtu.be/" + videoId;
 
@@ -39,7 +37,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
     public async IAsyncEnumerable<VideoSearchResult> SearchAsync(SearchCommand command,
         [EnumeratorCancellation] CancellationToken cancellation = default)
     {
-        ResourceMonitor resourceMonitor = new(resources);
+        ResourceMonitor resourceMonitor = new();
         List<IAsyncEnumerable<VideoSearchResult>> searches = [];
         SearchPlaylistLikeScopes(command.Channels);
         SearchPlaylistLikeScopes(command.Playlists);
@@ -95,7 +93,6 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
                     while (runningTasks > 0 && !resourceMonitor.HasSufficient())
                     {
                         cancellation.ThrowIfCancellationRequested();
-                        Debug.WriteLine($"#########shard loading########## not enough resources to load index shard {storageKey} {group.Key!.Value}");
                         await Task.Delay(1000);
                     }
 
@@ -105,7 +102,6 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
                     {
                         List<Task> shardSearches = [];
                         var containedVideoIds = group.Select(v => v.Id).ToArray();
-                        Debug.WriteLine($"#########shard loading########## loading index shard {storageKey} {group.Key!.Value}");
                         var shard = await videoIndexRepo.GetIndexShardAsync(storageKey, group.Key!.Value);
                         var indexedVideoIds = shard.GetIndexed(containedVideoIds);
 
@@ -143,7 +139,6 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
 
                         await Task.WhenAll(shardSearches).WithAggregateException();
                         shard.Dispose();
-                        Debug.WriteLine($"#########shard loading########## disposing of index shard {storageKey} {group.Key!.Value}");
                     }
                     finally { Interlocked.Decrement(ref runningTasks); }
                 }).ToList();
