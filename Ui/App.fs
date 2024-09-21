@@ -6,8 +6,8 @@ open System.Threading
 open Avalonia
 open Avalonia.Controls
 open Avalonia.Controls.Notifications
+open Avalonia.Markup.Xaml.Styling
 open Avalonia.Media
-open Avalonia.Themes.Fluent
 open AsyncImageLoader
 open Fabulous
 open Fabulous.Avalonia
@@ -525,7 +525,7 @@ module App =
                                         TextBlock(keyword.Value.Count.ToString() + "x")
 
                                         Border(TextBlock(keyword.Key))
-                                            .background(Colors.Purple)
+                                            .background(ThemeAware.With(Colors.Thistle, Colors.Purple))
                                             .cornerRadius(2)
                                             .padding(3, 0, 3, 0)
                                             .margin (3)
@@ -561,7 +561,10 @@ module App =
 #else
     let app model =
         let window =
-            Window(view model).icon("avares://Ui/SubTubular.ico").title ("SubTubular")
+            Window(view model)
+                .icon("avares://Ui/SubTubular.ico")
+                .title("SubTubular")
+                .background (ThemeAware.With(Colors.BlanchedAlmond, Colors.MidnightBlue))
 
         DesktopApplication(window)
             .requestedThemeVariant(Settings.getThemeVariant (model.Settings.ThemeVariantKey))
@@ -571,7 +574,8 @@ module App =
 #endif
 
     let create () =
-        let theme () = FluentTheme()
+        let theme () =
+            StyleInclude(baseUri = null, Source = Uri("avares://Ui/Styles.xaml"))
 
         let program =
             Program.statefulWithCmd init update
