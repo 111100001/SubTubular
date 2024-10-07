@@ -8,7 +8,7 @@ public abstract partial class CommandScope
 {
     /// <summary>Provides a description of the scope for <see cref="OutputCommand.Describe"/>.
     /// May yield multiple lines.</summary>
-    public abstract IEnumerable<string> Describe();
+    public abstract IEnumerable<string> Describe(bool inDetail = true);
 
     // used for debugging
     public override string ToString() => Describe().Join(" ");
@@ -28,7 +28,7 @@ public class VideosScope(List<string> videos) : CommandScope, ISerializable
         Progress.Videos?.Remove(video);
     }
 
-    public override IEnumerable<string> Describe()
+    public override IEnumerable<string> Describe(bool inDetail = true)
     {
         if (IsValid) // if validated, use titles - one per line
             foreach (var validated in Validated)
@@ -70,9 +70,16 @@ public abstract class PlaylistLikeScope : CommandScope
         CacheHours = cacheHours;
     }
 
-    public override IEnumerable<string> Describe()
+    public override IEnumerable<string> Describe(bool inDetail = true)
     {
-        yield return IsValid ? SingleValidated.Playlist!.Title : Alias;
+        var identifier = IsValid ? SingleValidated.Playlist!.Title : Alias;
+
+        if (!inDetail) yield return identifier;
+        else
+        {
+            var range = Skip == default ? "first " + Take : $"{Skip + 1} to {Skip + Take + 1}";
+            yield return range + " of " + identifier;
+        }
     }
 
     // for equality comparison of recent commands
