@@ -95,7 +95,7 @@ public static class Prevalidate
         var id = PlaylistId.TryParse(scope.Alias);
         if (id == null) return scope.Alias; // return invalid
 
-        scope.AddPrevalidated(id, "https://www.youtube.com/playlist?list=" + id);
+        scope.AddPrevalidated(id, Youtube.GetPlaylistUrl(id));
         scope.Report(VideoList.Status.preValidated);
         return null;
     }
