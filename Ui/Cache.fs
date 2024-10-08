@@ -19,12 +19,12 @@ module Cache =
 
     type Model =
         { Folders: FolderView list option
-          LastAccessGroups: LastAccessGroup list option }
+          ByLastAccess: LastAccessGroup list option }
 
     type Msg =
-        | ExpandingCacheByLastAccess
+        | ExpandingByLastAccess
         | RemoveByLastAccess of LastAccessGroup
-        | RemoveFromGroup of LastAccessGroup * FileInfo list
+        | RemoveFromLastAccessGroup of LastAccessGroup * FileInfo list
         | ExpandingFolders
         | OpenFolder of string
 
@@ -96,19 +96,17 @@ module Cache =
               Files = snd group |> List.ofSeq })
         |> List.ofSeq
 
-    let initModel =
-        { Folders = None
-          LastAccessGroups = None }
+    let initModel = { Folders = None; ByLastAccess = None }
 
     let update msg model =
         match msg with
-        | ExpandingCacheByLastAccess ->
+        | ExpandingByLastAccess ->
             let model =
-                if model.LastAccessGroups.IsSome then
+                if model.ByLastAccess.IsSome then
                     model
                 else
                     { model with
-                        LastAccessGroups = loadByLastAccess () |> Some }
+                        ByLastAccess = loadByLastAccess () |> Some }
 
             model, Cmd.none
 
@@ -117,16 +115,16 @@ module Cache =
                 file.Delete()
 
             { model with
-                LastAccessGroups = model.LastAccessGroups.Value |> List.except ([ group ]) |> Some },
+                ByLastAccess = model.ByLastAccess.Value |> List.except ([ group ]) |> Some },
             Cmd.none
 
-        | RemoveFromGroup(group, files) ->
+        | RemoveFromLastAccessGroup(group, files) ->
             for file in files do
                 file.Delete()
 
             { model with
-                LastAccessGroups =
-                    model.LastAccessGroups.Value
+                ByLastAccess =
+                    model.ByLastAccess.Value
                     |> List.map (fun g ->
                         if g = group then
                             { group with
@@ -158,7 +156,9 @@ module Cache =
 
         (HStack(5) {
             TextBlock($"{files.Length} {label} ({mbs:f2} Mb)").centerVertical ()
-            Button("🗑", RemoveFromGroup(group, files)).tooltip ("clear these files")
+
+            Button("🗑", RemoveFromLastAccessGroup(group, files))
+                .tooltip ("clear these files")
         })
             .right()
             .isVisible (files.Length > 0)
@@ -170,7 +170,7 @@ module Cache =
                 "Files accessed within the last...",
                 ScrollViewer(
                     ItemsControl(
-                        model.LastAccessGroups |> Option.defaultValue [],
+                        model.ByLastAccess |> Option.defaultValue [],
                         fun group ->
                             (Grid(coldefs = [ Auto; Star ], rowdefs = [ Auto; Star ]) {
                                 TextBlock(group.Name).header ()
@@ -203,7 +203,7 @@ module Cache =
                     )
                 )
             )
-                .onExpanding(fun _ -> ExpandingCacheByLastAccess)
+                .onExpanding(fun _ -> ExpandingByLastAccess)
                 .top ()
 
             Expander(
