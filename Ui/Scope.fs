@@ -71,6 +71,7 @@ module Scope =
                 let value = Alias.clean alias
                 VideoId.TryParse(value).HasValue)
 
+    //TODO prevent from running again when updating alias to name plus named id
     type AliasSearch() =
         let mutable searching: CancellationTokenSource = null
         let input = ViewRef<AutoCompleteBox>()
@@ -103,6 +104,7 @@ module Scope =
         member this.HeartBeat = heartBeat
         member this.Cancel = cancel
 
+        //TODO maybe remember the return value as selected per instance?
         member this.SelectAliases text (result: YoutubeSearchResult) forVideos =
             if forVideos then
                 let selection, searchTerms = VideosInput.partition text
@@ -112,6 +114,8 @@ module Scope =
             else
                 Alias.label result.Title result.Id
 
+        //TODO heart beat is not stopping in time for videos
+        //TODO maybe don't search if the input was selected from a search result before
         member this.SearchAsync (scope: CommandScope) (text: string) (cancellation: CancellationToken) : Task<obj seq> =
             task {
                 if input.Value.IsKeyboardFocusWithin then // only start search if input has keyboard focus

@@ -19,8 +19,8 @@ module OutputCommandView =
                 for hint in SearchCommand.QueryHints do
                     TextBlock("▪ " + hint).wrap ()
 
-                TextBlock("Read more about the syntax ➽")
-                    .background(ThemeAware.With(Colors.Thistle, Colors.Purple))
+                TextBlock("Read more about the syntax online 📡")
+                    .background(ThemeAware.With(Colors.SkyBlue, Colors.Purple))
                     .margin(0, 10, 0, 0)
                     .right()
                     .tappable (
