@@ -155,7 +155,7 @@ module OutputCommandView =
         see for widgets
             https://github.com/fabulous-dev/Fabulous.Avalonia/tree/main/src/Fabulous.Avalonia/Views
             https://play.avaloniaui.net/ *)
-    let render model =
+    let render model showThumbnails =
         (Grid(coldefs = [ Star ], rowdefs = [ Auto; Auto; Auto; Auto; Star ]) {
             let isSearch = model.Command = Commands.Search
 
@@ -176,7 +176,7 @@ module OutputCommandView =
                 | false -> None, None
 
             // scopes
-            ScrollViewer(View.map ScopesMsg (Scopes.view model.Scopes))
+            ScrollViewer(View.map ScopesMsg (Scopes.view model.Scopes showThumbnails))
                 .card()
                 .isVisible (model.ShowScopes)
 
@@ -201,7 +201,7 @@ module OutputCommandView =
                             searchResultsOnPage.Value,
                             (fun item ->
                                 let result, padding = item
-                                View.map SearchResultMsg (SearchResult.render padding result))
+                                View.map SearchResultMsg (SearchResult.render padding result showThumbnails))
                         )
                 })
             )

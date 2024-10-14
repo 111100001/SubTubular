@@ -97,7 +97,7 @@ module Scopes =
     let private addScopeStack = ViewRef<Border>()
     let private container = ViewRef<Panel>()
 
-    let view model =
+    let view model showThumbnails =
         (Panel() {
             HWrap() {
                 let maxWidth =
@@ -106,7 +106,9 @@ module Scopes =
                     | None -> infinity
 
                 for scope in model.List do
-                    (Border(View.map (fun scopeMsg -> ScopeMsg(scope, scopeMsg)) (Scope.view scope maxWidth)))
+                    (Border(
+                        View.map (fun scopeMsg -> ScopeMsg(scope, scopeMsg)) (Scope.view scope maxWidth showThumbnails)
+                    ))
                         .top()
                         .padding(2)
                         .margin(0, 0, 5, 5)
