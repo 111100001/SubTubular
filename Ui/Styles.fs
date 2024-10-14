@@ -14,6 +14,18 @@ open type Fabulous.Avalonia.View
 module Cursors =
     let hand = new Cursor(StandardCursorType.Hand)
 
+module Icon =
+    // prefixes
+    let channel = "📺 "
+    let playlist = "▶️ "
+    let video = "📼 "
+    let search = "🔍 "
+
+    // unpadded
+    let info = "💡"
+    let copy = "📋"
+    let recent = "🕝"
+
 [<AutoOpen>]
 module Styles =
     let private getFactor (factor: float option) = factor |> Option.defaultValue 1
