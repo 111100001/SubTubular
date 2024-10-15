@@ -26,6 +26,13 @@ module Icon =
     let copy = "📋"
     let recent = "🕝"
 
+    // suffixes
+    let thumbnail = " 🖼"
+    let videoCache = " 📦"
+    let playlistLike = " 📜"
+    let index = " 📚"
+    let scopeSearch = " 🔎"
+
 [<AutoOpen>]
 module Styles =
     let private getFactor (factor: float option) = factor |> Option.defaultValue 1
