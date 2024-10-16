@@ -22,6 +22,7 @@ module Icon =
     let search = "🔍 "
 
     // unpadded
+    let trash = "🗑"
     let info = "💡"
     let copy = "📋"
     let recent = "🕝"
