@@ -301,7 +301,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
 
                     Video? video = command.Videos?.Validated.SingleOrDefault(v => v.Id == id)?.Video;
                     video ??= await GetVideoAsync(id, cancellation, scope, downloadCaptionTracksAndSave: false);
-                    if (video.CaptionTracks.Count == 0) await DownloadCaptionTracksAndSaveAsync(video, cancellation);
+                    if (video.CaptionTracks.Count == 0) await DownloadCaptionTracksAndSaveAsync(video, scope, cancellation);
                     playlist?.SetUploadedAndKeywords(video);
 
                     await unIndexedVideos.Writer.WriteAsync(video);
@@ -503,7 +503,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
                 var vid = await Client.Videos.GetAsync(videoId, cancellation);
                 video = MapVideo(vid);
                 video.UnIndexed = true; // to re-index it if it was already indexed
-                if (downloadCaptionTracksAndSave) await DownloadCaptionTracksAndSaveAsync(video, cancellation);
+                if (downloadCaptionTracksAndSave) await DownloadCaptionTracksAndSaveAsync(video, scope, cancellation);
             }
             catch (HttpRequestException ex) when (ex.IsNotFound())
             { throw new InputException($"Video '{videoId}' could not be found.", ex); }
@@ -512,9 +512,9 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
         return video;
     }
 
-    private async Task DownloadCaptionTracksAndSaveAsync(Video video, CancellationToken cancellation)
+    private async Task DownloadCaptionTracksAndSaveAsync(Video video, CommandScope scope, CancellationToken cancellation)
     {
-        await foreach (var track in DownloadCaptionTracksAsync(video.Id, cancellation))
+        await foreach (var track in DownloadCaptionTracksAsync(video, scope, cancellation))
             video.CaptionTracks.Add(track);
 
         await dataStore.SetAsync(Video.StorageKeyPrefix + video.Id, video);
@@ -531,11 +531,13 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
         Thumbnail = SelectUrl(video.Thumbnails)
     };
 
-    private async IAsyncEnumerable<CaptionTrack> DownloadCaptionTracksAsync(string videoId,
+    private async IAsyncEnumerable<CaptionTrack> DownloadCaptionTracksAsync(Video video, CommandScope scope,
         [EnumeratorCancellation] CancellationToken cancellation)
     {
         cancellation.ThrowIfCancellationRequested();
-        var trackManifest = await Client.Videos.ClosedCaptions.GetManifestAsync(videoId, cancellation);
+        var trackManifest = await Client.Videos.ClosedCaptions.GetManifestAsync(video.Id, cancellation);
+
+        List<Exception> errors = [];
 
         foreach (var trackInfo in trackManifest.Tracks)
         {
@@ -558,10 +560,17 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
             {
                 captionTrack.ErrorMessage = ex.Message;
                 captionTrack.Error = ex.ToString();
+                errors.Add(ex);
             }
 
             yield return captionTrack;
         }
+
+        if (errors.Count > 0) scope.Notify("Errors downloading caption tracks",
+            $"for {video.Title} {GetVideoUrl(video.Id)}" + ErrorLog.OutputSpacing
+            + video.CaptionTracks.Where(t => t.Error != null)
+                .Select(t => $"{t.LanguageName}: {t.Url}")
+                .Join(Environment.NewLine), [.. errors]);
     }
 
     /// <summary>Returns a video lookup that used the local <paramref name="videos"/> collection for better performance.</summary>
