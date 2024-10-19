@@ -75,7 +75,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
                 if (changedFromPrevious)
                 {
                     await SavePlaylistAsync(playlist);
-                    scope.Notify("Search results may be stale.", playlistRefreshHadUnexpectedChanges, null);
+                    scope.Notify("Search results may be stale.", playlistRefreshHadUnexpectedChanges);
                     continue; // don't automatically repeat the search on the updated playlist
                 }
 
@@ -148,7 +148,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
                                return;
                            }
 
-                           scope.Notify("Some errors occurred", null, [t.Exception]);
+                           scope.Notify("Some errors occurred", errors: [t.Exception]);
                        }
 
                        results.Writer.Complete(); // gracefully close the channel so the reader doesn't encounter errors
@@ -171,7 +171,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
                 }
                 catch (Exception ex)// when (ex is not InputException)
                 {
-                    scope.Notify("Some errors occurred", null, [ex]);
+                    scope.Notify("Some errors occurred", errors: [ex]);
                 }
             }
         }
@@ -434,7 +434,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
         }
         catch (Exception ex) when (ex is not InputException)
         {
-            scope.Notify("Some errors occurred", null, [ex]);
+            scope.Notify("Some errors occurred", errors: [ex]);
         }
 
         index.Dispose();
@@ -467,7 +467,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
                     {
                         if (changedFromPrevious)
                         {
-                            scope.Notify("Keywords may be stale.", playlistRefreshHadUnexpectedChanges, null);
+                            scope.Notify("Keywords may be stale.", playlistRefreshHadUnexpectedChanges);
                             continue; // don't automatically repeat the search on the updated playlist
                         }
 
@@ -622,8 +622,8 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
         if (errors.Count > 0) scope.Notify("Errors downloading caption tracks",
             $"for {video.Title} {GetVideoUrl(video.Id)}" + ErrorLog.OutputSpacing
             + video.CaptionTracks.Where(t => t.Error != null)
-                .Select(t => $"{t.LanguageName}: {t.Url}")
-                .Join(Environment.NewLine), [.. errors]);
+                .Select(t => $"  {t.LanguageName}: {t.Url}")
+                .Join(Environment.NewLine), [.. errors], video);
     }
 
     /// <summary>Returns a video lookup that used the local <paramref name="videos"/> collection for better performance.</summary>

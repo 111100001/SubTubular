@@ -108,24 +108,6 @@ module OutputCommands =
                 try
                     let cancellation = model.Running.Token
 
-                    // set up async notification channel
-                    command.OnScopeNotification(fun scope title message errors ->
-                        let lines = [ message; "in " + scope.Describe(false).Join(" ") ]
-
-                        let msg =
-                            match errors with
-                            | [||] -> NotifyLong(title, join lines)
-                            | _ ->
-                                // collect error details for log
-                                let errorDetails = errors |> Array.map _.ToString() |> List.ofArray
-                                allErrors.Add(title :: lines @ errorDetails |> join)
-
-                                // notify messages
-                                let errorMsgs = errors |> Array.map _.Message
-                                FailLong(title, Seq.append lines errorMsgs |> join)
-
-                        dispatchCommon msg)
-
                     match command with
                     | :? SearchCommand as search ->
                         Prevalidate.Search search
