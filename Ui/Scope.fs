@@ -149,6 +149,7 @@ module Scope =
 
     type Model =
         { Scope: CommandScope
+          CaptionStatusNotifications: CommandScope.Notification list
           Aliases: string
           AliasSearch: AliasSearch
           ValidationError: string
@@ -230,6 +231,7 @@ module Scope =
 
     let private init scope aliases added =
         { Scope = scope
+          CaptionStatusNotifications = []
           Aliases = aliases
           AliasSearch = AliasSearch()
           ValidationError = null
@@ -291,7 +293,18 @@ module Scope =
             let model, cmd = validate model
             model, cmd, DoNothing
 
-        | ValidationSucceeded -> { model with ValidationError = null }, Cmd.none, DoNothing
+        | ValidationSucceeded ->
+            let notifications =
+                model.Scope.SingleValidated.Playlist
+                    .GetCaptionTrackDownloadStatus()
+                    .AsNotifications()
+                |> List.ofArray
+
+            { model with
+                ValidationError = null
+                CaptionStatusNotifications = notifications },
+            Cmd.none,
+            DoNothing
 
         | ValidationFailed exn ->
             { model with
@@ -493,7 +506,8 @@ module Scope =
                     else
                         search model showThumbnails
 
-                    let notifications = List.ofSeq playlistLike.Notifications
+                    let notifications =
+                        model.CaptionStatusNotifications @ (List.ofSeq playlistLike.Notifications)
 
                     TextBlock($"⚠️ {notifications.Length}")
                         .onScopeNotified(model.Scope, Notified)

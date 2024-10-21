@@ -261,7 +261,7 @@ internal sealed class VideoIndex : IDisposable
 
             if (captionTrackMatches.Any()) result.MatchingCaptionTracks = captionTrackMatches.Select(m =>
             {
-                var track = video.CaptionTracks.SingleOrDefault(t => t.LanguageName == m.FoundIn);
+                var track = video.CaptionTracks?.SingleOrDefault(t => t.LanguageName == m.FoundIn);
                 if (track == null) return null;
 
                 var matches = new MatchedText(track.GetFullText(), m.Locations
