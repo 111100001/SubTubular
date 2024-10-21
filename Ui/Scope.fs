@@ -150,7 +150,7 @@ module Scope =
         { Scope: CommandScope
           Aliases: string
           AliasSearch: AliasSearch
-          Error: string
+          ValidationError: string
           ShowSettings: bool
           Added: bool }
 
@@ -224,13 +224,13 @@ module Scope =
                     model, Cmd.OfTask.msg (remoteValidate model)
                 else
                     model, Cmd.none
-            | error -> { model with Error = error }, Cmd.none
+            | error -> { model with ValidationError = error }, Cmd.none
 
     let private init scope aliases added =
         { Scope = scope
           Aliases = aliases
           AliasSearch = AliasSearch()
-          Error = null
+          ValidationError = null
           ShowSettings = false
           Added = added }
 
@@ -262,7 +262,7 @@ module Scope =
         | AliasesUpdated aliases ->
             { model with
                 Added = false
-                Error = null
+                ValidationError = null
                 Aliases = aliases },
             Cmd.none,
             DoNothing
@@ -289,8 +289,13 @@ module Scope =
             let model, cmd = validate model
             model, cmd, DoNothing
 
-        | ValidationSucceeded -> { model with Error = null }, Cmd.none, DoNothing
-        | ValidationFailed exn -> { model with Error = exn.Message }, Cmd.none, DoNothing
+        | ValidationSucceeded -> { model with ValidationError = null }, Cmd.none, DoNothing
+
+        | ValidationFailed exn ->
+            { model with
+                ValidationError = exn.Message },
+            Cmd.none,
+            DoNothing
 
         | SkipChanged skip ->
             match model.Scope with
@@ -532,10 +537,10 @@ module Scope =
                     (search model showThumbnails).maxWidth(maxWidth).gridColumn(1).gridRow (1)
                 }
 
-            TextBlock(model.Error)
+            TextBlock(model.ValidationError)
                 .foreground(Colors.Red)
                 .wrap()
-                .isVisible (model.Error <> null) // && not model.Scope.IsValid)
+                .isVisible (model.ValidationError <> null) // && not model.Scope.IsValid)
 
             ProgressBar(0, model.Scope.Progress.AllJobs, model.Scope.Progress.CompletedJobs, ProgressValueChanged)
                 .onScopeProgressChanged (model.Scope, ProgressChanged)

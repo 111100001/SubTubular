@@ -92,7 +92,7 @@ public sealed class Playlist
         finally { changeToken.Release(); }
     }
 
-    internal bool SetUploadedAndKeywords(Video loadedVideo)
+    internal bool Update(Video loadedVideo)
     {
         changeToken!.Wait();
 
