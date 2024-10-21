@@ -168,10 +168,33 @@ module OutputCommands =
                     | _ -> failwith ("Unknown command type " + command.GetType().ToString())
                 with exn ->
                     let dispatchError (exn: exn) =
-                        if exn :? InputException |> not then
-                            allErrors.Add(exn.ToString())
+                        match exn with
+                        | :? InputException -> ()
+                        | :? ColdTaskException as cte when cte.GetRootCauses().All(fun e -> e :? InputException) -> ()
+                        | _ -> allErrors.Add(exn.ToString())
 
-                        Fail exn.Message |> dispatchCommon
+                        let error =
+                            match exn.InnerException with
+                            | null -> Fail exn.Message
+                            | inner ->
+                                let message =
+                                    match exn with
+                                    | :? ColdTaskException as cte ->
+                                        cte
+                                            .GetRootCauses()
+                                            .Select(fun e ->
+                                                let details =
+                                                    match e.InnerException with
+                                                    | null -> ""
+                                                    | _ -> " " + e.InnerException.Message
+
+                                                e.Message + details)
+                                            .Join("\n")
+                                    | _ -> inner.Message
+
+                                FailLong(exn.Message, message)
+
+                        dispatchCommon error
 
                     match exn with
                     | :? OperationCanceledException -> Notify "The op was canceled" |> dispatchCommon
