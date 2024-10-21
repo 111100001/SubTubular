@@ -158,5 +158,14 @@ internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps)
 public class ColdTaskException : Exception
 {
     public ColdTaskException(string message, Exception innerException) : base(message, innerException) { }
-    public IEnumerable<Exception> GetRootCauses() => ((AggregateException)InnerException!).Flatten().InnerExceptions;
+}
+
+public static class ExceptionExtensions
+{
+    public static IEnumerable<Exception> GetRootCauses(this Exception ex) => ex switch
+    {
+        AggregateException aggex => aggex.Flatten().InnerExceptions.SelectMany(inner => inner.GetRootCauses()),
+        ColdTaskException ctex => ctex.InnerException!.GetRootCauses(),
+        _ => [ex]
+    };
 }

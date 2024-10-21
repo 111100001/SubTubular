@@ -137,6 +137,7 @@ internal static class HashCodeExtensions
 public static class AsyncEnumerableExtensions
 {
     public static async IAsyncEnumerable<T> Parallelize<T>(this IEnumerable<IAsyncEnumerable<T>> asyncProducers,
+        Action<Exception> handleProducerError,
         [EnumeratorCancellation] CancellationToken cancellation)
     {
         var products = Channel.CreateUnbounded<T>(new UnboundedChannelOptions() { SingleReader = true });
@@ -148,7 +149,10 @@ public static class AsyncEnumerableExtensions
                 await foreach (var product in asyncProducer.WithCancellation(cancellation))
                     await products.Writer.WriteAsync(product, cancellation);
             }
-            catch (OperationCanceledException) { } // Catch cancellation from outer loop
+            catch (Exception ex)
+            {
+                handleProducerError(ex);
+            }
         }).ToList();
 
         // hook up writer completion before starting to read to ensure the reader knows when it's done

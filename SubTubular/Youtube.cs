@@ -38,14 +38,24 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
     public async IAsyncEnumerable<VideoSearchResult> SearchAsync(SearchCommand command,
         [EnumeratorCancellation] CancellationToken cancellation = default)
     {
+        var linkedTs = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         ResourceAwareJobScheduler jobScheduler = new(TimeSpan.FromSeconds(1));
         List<IAsyncEnumerable<VideoSearchResult>> searches = [];
         SearchPlaylistLikeScopes(command.Channels);
         SearchPlaylistLikeScopes(command.Playlists);
-        if (command.Videos?.IsValid == true) searches.Add(SearchVideosAsync(command, cancellation));
+        if (command.Videos?.IsValid == true) searches.Add(SearchVideosAsync(command, linkedTs.Token));
         var spansMultipleIndexes = searches.Count > 0;
 
-        await foreach (var result in searches.Parallelize(cancellation))
+        Action<Exception> handleProducerError = ex =>
+        {
+            if (ex.GetRootCauses().OfType<InputException>().Any())
+            {
+                linkedTs.Cancel();
+                throw ex;
+            }
+        };
+
+        await foreach (var result in searches.Parallelize(handleProducerError, linkedTs.Token))
         {
             if (spansMultipleIndexes) result.Rescore();
             yield return result;
@@ -54,7 +64,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
         void SearchPlaylistLikeScopes(PlaylistLikeScope[]? scopes)
         {
             if (scopes.HasAny()) searches.AddRange(scopes!.GetValid().DistinctBy(c => c.SingleValidated.Id)
-                .Select(scope => SearchPlaylistAsync(command, scope, jobScheduler, cancellation)));
+                .Select(scope => SearchPlaylistAsync(command, scope, jobScheduler, linkedTs.Token)));
         }
     }
 
@@ -139,11 +149,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
                    {
                        if (t.IsFaulted)
                        {
-                           var causing = t.Exception.Flatten().InnerExceptions // cold task exns
-                                .SelectMany(e => e.InnerException is AggregateException aggex ? aggex.Flatten().InnerExceptions : (IList<Exception>)[e.InnerException!])
-                                .ToArray();
-
-                           if (causing.OfType<InputException>().Any())
+                           if (t.Exception.GetRootCauses().OfType<InputException>().Any())
                            {
                                results.Writer.Complete(t.Exception);
                                return;
