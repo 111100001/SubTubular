@@ -566,16 +566,6 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
         return video;
     }
 
-    private async Task DownloadCaptionTracksAndSaveAsync(Video video, CommandScope scope, CancellationToken cancellation)
-    {
-        video.CaptionTracks = [];
-
-        await foreach (var track in DownloadCaptionTracksAsync(video, scope, cancellation))
-            video.CaptionTracks.Add(track);
-
-        await dataStore.SetAsync(Video.StorageKeyPrefix + video.Id, video);
-    }
-
     private static Video MapVideo(YoutubeExplode.Videos.Video video) => new()
     {
         Id = video.Id.Value,
@@ -587,12 +577,10 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
         Thumbnail = SelectUrl(video.Thumbnails)
     };
 
-    private async IAsyncEnumerable<CaptionTrack> DownloadCaptionTracksAsync(Video video, CommandScope scope,
-        [EnumeratorCancellation] CancellationToken cancellation)
+    private async Task DownloadCaptionTracksAndSaveAsync(Video video, CommandScope scope, CancellationToken cancellation)
     {
         cancellation.ThrowIfCancellationRequested();
         var trackManifest = await Client.Videos.ClosedCaptions.GetManifestAsync(video.Id, cancellation);
-
         List<Exception> errors = [];
         video.CaptionTracks = [];
 
@@ -620,7 +608,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
                 errors.Add(ex);
             }
 
-            yield return captionTrack;
+            video.CaptionTracks.Add(captionTrack);
         }
 
         if (errors.Count > 0) scope.Notify("Errors downloading caption tracks",
@@ -628,6 +616,8 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
             + video.CaptionTracks.Where(t => t.Error != null)
                 .Select(t => $"  {t.LanguageName}: {t.Url}")
                 .Join(Environment.NewLine), [.. errors], video);
+
+        await dataStore.SetAsync(Video.StorageKeyPrefix + video.Id, video);
     }
 
     /// <summary>Returns a video lookup that used the local <paramref name="videos"/> collection for better performance.</summary>
