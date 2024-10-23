@@ -80,8 +80,6 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
     }
 
     /// <summary>Searches videos defined by a playlist.</summary>
-    /// <param name="cancellation">Passed in either explicitly or by the IAsyncEnumerable.WithCancellation() extension,
-    /// see https://docs.microsoft.com/en-us/archive/msdn-magazine/2019/november/csharp-iterating-with-async-enumerables-in-csharp-8#a-tour-through-async-enumerables</param>
     private async Task SearchPlaylistAsync(SearchCommand command, PlaylistLikeScope scope,
         Func<VideoSearchResult, ValueTask> yieldResult,
         ResourceAwareJobScheduler jobScheduler, CancellationToken cancellation = default)
@@ -387,11 +385,8 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
     }
 
     /// <summary>Searches videos scoped by the specified <paramref name="command"/>.</summary>
-    /// <param name="cancellation">Passed in either explicitly or by the IAsyncEnumerable.WithCancellation() extension,
-    /// see https://docs.microsoft.com/en-us/archive/msdn-magazine/2019/november/csharp-iterating-with-async-enumerables-in-csharp-8#a-tour-through-async-enumerables</param>
     private async Task SearchVideosAsync(SearchCommand command,
-        Func<VideoSearchResult, ValueTask> yieldResult,
-        CancellationToken cancellation)
+        Func<VideoSearchResult, ValueTask> yieldResult, CancellationToken cancellation)
     {
         cancellation.ThrowIfCancellationRequested();
         VideosScope scope = command.Videos!;
