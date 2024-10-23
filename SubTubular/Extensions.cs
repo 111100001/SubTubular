@@ -137,8 +137,7 @@ internal static class HashCodeExtensions
 public static class AsyncEnumerableExtensions
 {
     public static async IAsyncEnumerable<T> Parallelize<T>(this IEnumerable<IAsyncEnumerable<T>> asyncProducers,
-        Action<Exception> handleProducerError,
-        [EnumeratorCancellation] CancellationToken cancellation)
+        Action<Exception> handleProducerError, [EnumeratorCancellation] CancellationToken cancellation)
     {
         var products = Channel.CreateUnbounded<T>(new UnboundedChannelOptions() { SingleReader = true });
 

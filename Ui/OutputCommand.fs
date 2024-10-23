@@ -121,7 +121,7 @@ module OutputCommands =
                         do!
                             Services.Youtube
                                 .SearchAsync(search, cancellation)
-                                .dispatchBatchThrottledTo (1000, SearchResults, dispatch)
+                                .dispatchBatchThrottledTo (500, SearchResults, dispatch)
 
                     | :? ListKeywords as listKeywords ->
                         Prevalidate.Scopes listKeywords

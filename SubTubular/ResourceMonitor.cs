@@ -66,9 +66,8 @@ internal sealed class ResourceMonitor
 internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps)
 {
     private readonly ResourceMonitor resources = new();
-    private uint running;
 
-    internal async Task ParallelizeAsync(IEnumerable<(string name, Func<Task> heatUp)> coldTasks, CancellationToken token)
+    internal async Task ParallelizeAsync(IEnumerable<(string name, Func<Task> heatUp)> coldTasks, Action<AggregateException> onError, CancellationToken token)
     {
         SynchronizedCollection<(string name, Task task)> hotTasks = [];
         var cooking = HeatUp(coldTasks, hotTasks, token);
@@ -79,9 +78,14 @@ internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps)
             if (hotTasks.Count > 0)
             {
                 var cooked = await Task.WhenAny(hotTasks.Select(t => t.task)); // wait for and get the first to complete
-                Interlocked.Decrement(ref running);
                 var hot = hotTasks.Single(t => t.task == cooked);
-                if (cooked.IsFaulted) errors.Add((hot.name, cooked.Exception!));
+
+                if (cooked.IsFaulted)
+                {
+                    errors.Add((hot.name, cooked.Exception!));
+                    onError(cooked.Exception);
+                }
+
                 hotTasks.Remove(hot);
             }
 
@@ -107,7 +111,6 @@ internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps)
             if (hotTasks.Count > 0)
             {
                 var cooked = await Task.WhenAny(hotTasks.Select(t => t.task)); // wait for and get the first to complete
-                Interlocked.Decrement(ref running);
                 var hot = hotTasks.Single(t => t.task == cooked);
                 hotTasks.Remove(hot);
                 if (cooked.IsFaulted) errors.Add((hot.name, cooked.Exception!));
@@ -135,11 +138,10 @@ internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps)
         while (!token.IsCancellationRequested && orders.Count > 0)
         {
             // start a cold task if none is running or we have sufficient resources
-            if (running == 0 || resources.HasSufficient())
+            if (hotTasks.Count == 0 || resources.HasSufficient())
             {
                 var (name, heatUp) = orders.Dequeue();
                 hotTasks.Add((name, heatUp())); // starts the task
-                Interlocked.Increment(ref running);
             }
 
             await Task.Delay(delayBetweenHeatUps, token);
