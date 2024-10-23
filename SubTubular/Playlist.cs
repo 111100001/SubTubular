@@ -2,7 +2,7 @@
 
 namespace SubTubular;
 
-using CaptionTrackDownloadStates = (Playlist.VideoInfo.CaptionStatus? status, Playlist.VideoInfo[] videos)[];
+using CaptionTrackDownloadStatus = (Playlist.VideoInfo.CaptionStatus? status, Playlist.VideoInfo[] videos);
 using JP = JsonPropertyNameAttribute;
 
 public sealed class Playlist
@@ -28,7 +28,7 @@ public sealed class Playlist
         finally { changeToken?.Release(); }
     }
 
-    public CaptionTrackDownloadStates GetCaptionTrackDownloadStatus()
+    public CaptionTrackDownloadStatus[] GetCaptionTrackDownloadStates()
         => GetVideos()
             .GroupBy(v => v.CaptionTrackDownloadStatus)
             .Select(g => (g.Key, g.ToArray())).ToArray();
@@ -220,8 +220,9 @@ public sealed class Playlist
 
 public static class PlaylistExtensions
 {
-    public static CommandScope.Notification[] AsNotifications(this CaptionTrackDownloadStates states)
+    public static CommandScope.Notification[] AsNotifications(this CaptionTrackDownloadStatus[] states, Func<CaptionTrackDownloadStatus, bool>? predicate = null)
         => states
+            .Where(s => predicate == null || predicate(s))
             .Select(s =>
             {
                 var issue = s.status switch
@@ -237,6 +238,6 @@ public static class PlaylistExtensions
             })
             .ToArray();
 
-    public static Dictionary<PlaylistLikeScope, CaptionTrackDownloadStates> GetCaptionTrackDownloadStatus(this OutputCommand command)
-        => command.GetPlaylistLikeScopes().ToDictionary(scope => scope, scope => scope.SingleValidated.Playlist!.GetCaptionTrackDownloadStatus());
+    public static Dictionary<PlaylistLikeScope, CaptionTrackDownloadStatus[]> GetCaptionTrackDownloadStatus(this OutputCommand command)
+        => command.GetPlaylistLikeScopes().ToDictionary(scope => scope, scope => scope.SingleValidated.Playlist!.GetCaptionTrackDownloadStates());
 }

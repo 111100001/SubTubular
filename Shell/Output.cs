@@ -53,7 +53,7 @@ static partial class Program
 
         foreach (var scope in command.GetCaptionTrackDownloadStatus())
         {
-            var notifications = scope.Value.AsNotifications();
+            var notifications = scope.Value.AsNotifications(s => s.status.HasValue);
 
             if (notifications.Length > 0)
                 foreach (var ntf in notifications) OnScopeNotified(scope.Key, ntf);

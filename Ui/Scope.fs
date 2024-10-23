@@ -296,8 +296,10 @@ module Scope =
         | ValidationSucceeded ->
             let notifications =
                 model.Scope.SingleValidated.Playlist
-                    .GetCaptionTrackDownloadStatus()
-                    .AsNotifications()
+                    .GetCaptionTrackDownloadStates()
+                    .AsNotifications(fun s ->
+                        let status, _ = s.ToTuple()
+                        status.HasValue)
                 |> List.ofArray
 
             { model with
