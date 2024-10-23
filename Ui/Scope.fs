@@ -343,7 +343,25 @@ module Scope =
             model, Cmd.none, DoNothing
 
         | Remove -> model, Cmd.none, RemoveMe
-        | ProgressChanged -> model, Cmd.none, DoNothing
+
+        | ProgressChanged ->
+            let model =
+                match model.Scope.Progress.State with
+                | VideoList.Status.searched ->
+                    let notifications =
+                        model.Scope.SingleValidated.Playlist
+                            .GetCaptionTrackDownloadStates()
+                            .AsNotifications(fun s ->
+                                let status, _ = s.ToTuple()
+                                status.HasValue)
+                        |> List.ofArray
+
+                    { model with
+                        CaptionStatusNotifications = notifications }
+                | _ -> model
+
+            model, Cmd.none, DoNothing
+
         | ProgressValueChanged _ -> model, Cmd.none, DoNothing
         | Notified _ -> model, Cmd.none, DoNothing
         | Common _ -> model, Cmd.none, DoNothing
