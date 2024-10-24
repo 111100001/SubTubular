@@ -142,6 +142,8 @@ module App =
 
             | _ -> { model with Settings = upd }, mappedCmd
 
+        | JobReporterMsg _ -> model, Cmd.none
+
     let private view model =
         (Dock() {
             View.map JobReporterMsg (JobReporter.render (Services.JobSchedulerReporter))

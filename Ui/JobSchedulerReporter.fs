@@ -15,12 +15,15 @@ module JobReporter =
         (VStack(5) {
             ProgressBar(0, 100, float model.CpuUsage, CpuUsageChanged)
                 // see https://docs.avaloniaui.net/docs/reference/controls/progressbar#progresstextformat-example
-                .progressTextFormat ("CPU usage : {1:0}%")
+                .progressTextFormat("CPU usage : {1:0}%")
+                .showProgressText (true)
 
             ProgressBar(0, 2, float model.GcMemoryPressure, GcMemoryPressureChanged)
-                .progressTextFormat ($"GC memory pressure : {model.GcMemoryPressure}")
+                .progressTextFormat($"GC memory pressure : {model.GcMemoryPressure}")
+                .showProgressText (true)
 
             ProgressBar(0, float model.All, float model.Completed, QueueProgressChanged)
-                .progressTextFormat ($"{model.Queued} queued {model.Running} running {model.Completed} completed")
+                .progressTextFormat($"{model.Queued} queued {model.Running} running {model.Completed} completed")
+                .showProgressText (true)
         })
             .onJobSchedulerReporterUpdated (model, Updated)
