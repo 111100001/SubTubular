@@ -25,7 +25,7 @@ module App =
         | RecentMsg of ConfigFile.Msg
         | SettingsMsg of Settings.Msg
         | SearchMsg of OutputCommands.Msg
-        | JobReporterMsg of JobReporter.Msg
+        | JobReporterMsg of SchedulerMonitor.Msg
 
         | AttachedToVisualTreeChanged of VisualTreeAttachmentEventArgs
         | Common of CommonMsg
@@ -146,7 +146,7 @@ module App =
 
     let private view model =
         (TabControl() {
-            TabItem(Image("avares://Ui/SubTubular.ico").height (20), HWrapEmpty())
+            TabItem(Image("avares://Ui/SubTubular.ico").margin(10, 5, 0, 0).height (25), HWrapEmpty())
                 .isEnabled (false)
 
             TabItem(Icon.recent + " Recent", View.map RecentMsg (ConfigFile.view model.Recent))
@@ -161,11 +161,11 @@ module App =
             TabItem("🗃 Storage", View.map CacheMsg (Cache.view model.Cache))
             TabItem("⚙ Settings", View.map SettingsMsg (Settings.view model.Settings))
 
-            TabItem(View.map JobReporterMsg (JobReporter.render (Services.JobSchedulerReporter)), HWrapEmpty())
+            TabItem(View.map JobReporterMsg (SchedulerMonitor.render (Services.JobSchedulerReporter)), HWrapEmpty())
                 .isEnabled(false)
                 .isVisible (model.Settings.ShowJobSchedulerMonitor)
         })
-            .margin (0, 20, 0, 10) // to allow dragging the Window while using extendClientAreaToDecorationsHint
+            .margin (0, 15, 0, 10) // to allow dragging the Window while using extendClientAreaToDecorationsHint
 #if MOBILE
     let app model = SingleViewApplication(view model)
 #else

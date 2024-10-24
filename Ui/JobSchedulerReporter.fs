@@ -4,7 +4,7 @@ open Fabulous.Avalonia
 open SubTubular
 open type Fabulous.Avalonia.View
 
-module JobReporter =
+module SchedulerMonitor =
     type Msg =
         | Updated
         | QueueProgressChanged of float
@@ -12,7 +12,7 @@ module JobReporter =
         | GcMemoryPressureChanged of float
 
     let render (model: JobSchedulerReporter) =
-        (VStack(5) {
+        (VStack(1) {
             ProgressBar(0, 100, float model.CpuUsage, CpuUsageChanged)
                 // see https://docs.avaloniaui.net/docs/reference/controls/progressbar#progresstextformat-example
                 .progressTextFormat("CPU usage : {1:0}%")
