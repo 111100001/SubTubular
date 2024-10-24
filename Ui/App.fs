@@ -25,7 +25,7 @@ module App =
         | RecentMsg of ConfigFile.Msg
         | SettingsMsg of Settings.Msg
         | SearchMsg of OutputCommands.Msg
-        | JobReporterMsg of SchedulerMonitor.Msg
+        | SchedulerMonitorMsg of SchedulerMonitor.Msg
 
         | AttachedToVisualTreeChanged of VisualTreeAttachmentEventArgs
         | Common of CommonMsg
@@ -142,7 +142,7 @@ module App =
 
             | _ -> { model with Settings = upd }, mappedCmd
 
-        | JobReporterMsg _ -> model, Cmd.none
+        | SchedulerMonitorMsg _ -> model, Cmd.none
 
     let private view model =
         (TabControl() {
@@ -161,7 +161,7 @@ module App =
             TabItem("🗃 Storage", View.map CacheMsg (Cache.view model.Cache))
             TabItem("⚙ Settings", View.map SettingsMsg (Settings.view model.Settings))
 
-            TabItem(View.map JobReporterMsg (SchedulerMonitor.render (Services.JobSchedulerReporter)), HWrapEmpty())
+            TabItem(View.map SchedulerMonitorMsg (SchedulerMonitor.render (Services.JobSchedulerReporter)), HWrapEmpty())
                 .isEnabled(false)
                 .isVisible (model.Settings.ShowJobSchedulerMonitor)
         })
