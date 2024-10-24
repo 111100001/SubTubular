@@ -185,6 +185,13 @@ public class JobSchedulerReporter
 
     internal void ReportQueue(uint count)
     {
+        if (queues == 0) // reset counters
+        {
+            Interlocked.Exchange(ref queued, 0);
+            Interlocked.Exchange(ref running, 0);
+            Interlocked.Exchange(ref completed, 0);
+        }
+
         Interlocked.Increment(ref queues);
         Interlocked.Add(ref queued, count);
         ReportUpdated();

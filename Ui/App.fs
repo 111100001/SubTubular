@@ -161,11 +161,15 @@ module App =
             TabItem("🗃 Storage", View.map CacheMsg (Cache.view model.Cache))
             TabItem("⚙ Settings", View.map SettingsMsg (Settings.view model.Settings))
 
-            TabItem(View.map SchedulerMonitorMsg (SchedulerMonitor.render (Services.JobSchedulerReporter)), HWrapEmpty())
+            TabItem(
+                View.map SchedulerMonitorMsg (SchedulerMonitor.render (Services.JobSchedulerReporter)),
+                HWrapEmpty()
+            )
                 .isEnabled(false)
                 .isVisible (model.Settings.ShowJobSchedulerMonitor)
         })
-            .margin (0, 15, 0, 10) // to allow dragging the Window while using extendClientAreaToDecorationsHint
+            .margin(0, 15, 0, 10) // to allow dragging the Window while using extendClientAreaToDecorationsHint
+            .onAttachedToVisualTree (AttachedToVisualTreeChanged)
 #if MOBILE
     let app model = SingleViewApplication(view model)
 #else

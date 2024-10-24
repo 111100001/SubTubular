@@ -29,4 +29,5 @@ module SchedulerMonitor =
                 .fontSize(8)
                 .showProgressText (true)
         })
+            .isVisible(model.Queues > 0u)
             .onJobSchedulerReporterUpdated (model, Updated)

@@ -36,8 +36,7 @@ public sealed class Youtube(DataStore dataStore, VideoIndexRepository videoIndex
     public readonly YoutubeClient Client = new();
 
     public async IAsyncEnumerable<VideoSearchResult> SearchAsync(SearchCommand command,
-        JobSchedulerReporter? reporter = null,
-        [EnumeratorCancellation] CancellationToken cancellation = default)
+        JobSchedulerReporter? reporter = null, [EnumeratorCancellation] CancellationToken cancellation = default)
     {
         var linkedTs = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         var results = Pipe.CreateUnbounded<VideoSearchResult>(new UnboundedChannelOptions() { SingleReader = true });
