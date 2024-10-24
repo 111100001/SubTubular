@@ -147,7 +147,6 @@ module App =
     let private view model =
         (TabControl() {
             TabItem(Image("avares://Ui/SubTubular.ico").height (20), HWrapEmpty())
-                .isHitTestVisible(false)
                 .isEnabled (false)
 
             TabItem(Icon.recent + " Recent", View.map RecentMsg (ConfigFile.view model.Recent))
@@ -163,8 +162,8 @@ module App =
             TabItem("⚙ Settings", View.map SettingsMsg (Settings.view model.Settings))
 
             TabItem(View.map JobReporterMsg (JobReporter.render (Services.JobSchedulerReporter)), HWrapEmpty())
-                .isHitTestVisible(false)
-                .isEnabled (false)
+                .isEnabled(false)
+                .isVisible (model.Settings.ShowJobSchedulerMonitor)
         })
             .margin (0, 20, 0, 10) // to allow dragging the Window while using extendClientAreaToDecorationsHint
 #if MOBILE
