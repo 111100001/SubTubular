@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace SubTubular;
 
-public sealed class ResourceMonitor(JobSchedulerReporter reporter)
+public sealed class ResourceMonitor(JobSchedulerReporter? reporter)
 {
     private TimeSpan lastProcessorTime = GetTotalProcessorTime();
     private DateTime snapshotTaken = DateTime.UtcNow;
@@ -15,7 +15,7 @@ public sealed class ResourceMonitor(JobSchedulerReporter reporter)
     {
         double cpuUsage = GetCpuUsagePercentage();
         var memoryPressure = GcMemoryPressure.GetLevel();
-        reporter.ReportResources(cpuUsage, memoryPressure);
+        reporter?.ReportResources(cpuUsage, memoryPressure);
         return cpuUsage < 80 && memoryPressure < GcMemoryPressure.Level.High;
     }
 
@@ -64,7 +64,7 @@ public sealed class ResourceMonitor(JobSchedulerReporter reporter)
     }
 }
 
-internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps, JobSchedulerReporter reporter)
+internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps, JobSchedulerReporter? reporter)
 {
     private readonly ResourceMonitor resources = new(reporter);
 
@@ -88,7 +88,7 @@ internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps, Jo
                 }
 
                 hotTasks.Remove(hot);
-                reporter.ReportFinishedOne();
+                reporter?.ReportFinishedOne();
             }
 
             // Prevent tight looping while waiting for new tasks
@@ -115,7 +115,7 @@ internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps, Jo
                 var cooked = await Task.WhenAny(hotTasks.Select(t => t.task)); // wait for and get the first to complete
                 var hot = hotTasks.Single(t => t.task == cooked);
                 hotTasks.Remove(hot);
-                reporter.ReportFinishedOne();
+                reporter?.ReportFinishedOne();
                 if (cooked.IsFaulted) errors.Add((hot.name, cooked.Exception!));
                 else yield return cooked.Result; // in order of completion
             }
@@ -137,7 +137,7 @@ internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps, Jo
         SynchronizedCollection<(string name, T task)> hotTasks, CancellationToken token) where T : Task
     {
         var orders = new Queue<(string name, Func<T> heatUp)>(coldTasks);
-        reporter.ReportQueue((uint)orders.Count);
+        reporter?.ReportQueue((uint)orders.Count);
 
         while (!token.IsCancellationRequested && orders.Count > 0)
         {
@@ -146,13 +146,13 @@ internal sealed class ResourceAwareJobScheduler(TimeSpan delayBetweenHeatUps, Jo
             {
                 var (name, heatUp) = orders.Dequeue();
                 hotTasks.Add((name, heatUp())); // starts the task
-                reporter.ReportStartedOne();
+                reporter?.ReportStartedOne();
             }
 
             await Task.Delay(delayBetweenHeatUps, token);
         }
 
-        reporter.ReportQueueCompleted();
+        reporter?.ReportQueueCompleted();
     }
 
     private static AggregateException BundleErrors(List<(string name, Exception error)> errors)
@@ -171,6 +171,15 @@ public class JobSchedulerReporter
     private uint queues, queued, running, completed;
     private double lastCpuUsage;
     private ResourceMonitor.GcMemoryPressure.Level lastMemoryPressure = ResourceMonitor.GcMemoryPressure.Level.Low;
+
+    public uint Queues => queues;
+    public uint Queued => queued;
+    public uint Running => running;
+    public uint Completed => completed;
+    public uint All => queued + running + completed;
+
+    public double CpuUsage => lastCpuUsage;
+    public ResourceMonitor.GcMemoryPressure.Level GcMemoryPressure => lastMemoryPressure;
 
     public event EventHandler? Updated;
 

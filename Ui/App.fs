@@ -25,6 +25,7 @@ module App =
         | RecentMsg of ConfigFile.Msg
         | SettingsMsg of Settings.Msg
         | SearchMsg of OutputCommands.Msg
+        | JobReporterMsg of JobReporter.Msg
 
         | AttachedToVisualTreeChanged of VisualTreeAttachmentEventArgs
         | Common of CommonMsg
@@ -142,20 +143,24 @@ module App =
             | _ -> { model with Settings = upd }, mappedCmd
 
     let private view model =
-        (TabControl() {
-            TabItem(Icon.recent + " Recent", View.map RecentMsg (ConfigFile.view model.Recent))
+        (Dock() {
+            View.map JobReporterMsg (JobReporter.render (Services.JobSchedulerReporter))
 
-            TabItem(
-                Icon.search + "Search",
-                View.map SearchMsg (OutputCommandView.render model.Search model.Settings.ShowThumbnails)
-            )
-                .reference (searchTab)
+            (TabControl() {
+                TabItem(Icon.recent + " Recent", View.map RecentMsg (ConfigFile.view model.Recent))
 
-            TabItem("🗃 Storage", View.map CacheMsg (Cache.view model.Cache))
-            TabItem("⚙ Settings", View.map SettingsMsg (Settings.view model.Settings))
+                TabItem(
+                    Icon.search + "Search",
+                    View.map SearchMsg (OutputCommandView.render model.Search model.Settings.ShowThumbnails)
+                )
+                    .reference (searchTab)
+
+                TabItem("🗃 Storage", View.map CacheMsg (Cache.view model.Cache))
+                TabItem("⚙ Settings", View.map SettingsMsg (Settings.view model.Settings))
+            })
+                .onAttachedToVisualTree (AttachedToVisualTreeChanged)
         })
-            .margin(10) // to allow dragging the Window while using extendClientAreaToDecorationsHint
-            .onAttachedToVisualTree (AttachedToVisualTreeChanged)
+            .margin (10) // to allow dragging the Window while using extendClientAreaToDecorationsHint
 #if MOBILE
     let app model = SingleViewApplication(view model)
 #else
