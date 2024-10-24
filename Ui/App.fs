@@ -145,24 +145,28 @@ module App =
         | JobReporterMsg _ -> model, Cmd.none
 
     let private view model =
-        (Dock() {
-            View.map JobReporterMsg (JobReporter.render (Services.JobSchedulerReporter))
+        (TabControl() {
+            TabItem(Image("avares://Ui/SubTubular.ico").height (20), HWrapEmpty())
+                .isHitTestVisible(false)
+                .isEnabled (false)
 
-            (TabControl() {
-                TabItem(Icon.recent + " Recent", View.map RecentMsg (ConfigFile.view model.Recent))
+            TabItem(Icon.recent + " Recent", View.map RecentMsg (ConfigFile.view model.Recent))
+                .isSelected (true)
 
-                TabItem(
-                    Icon.search + "Search",
-                    View.map SearchMsg (OutputCommandView.render model.Search model.Settings.ShowThumbnails)
-                )
-                    .reference (searchTab)
+            TabItem(
+                Icon.search + "Search",
+                View.map SearchMsg (OutputCommandView.render model.Search model.Settings.ShowThumbnails)
+            )
+                .reference (searchTab)
 
-                TabItem("🗃 Storage", View.map CacheMsg (Cache.view model.Cache))
-                TabItem("⚙ Settings", View.map SettingsMsg (Settings.view model.Settings))
-            })
-                .onAttachedToVisualTree (AttachedToVisualTreeChanged)
+            TabItem("🗃 Storage", View.map CacheMsg (Cache.view model.Cache))
+            TabItem("⚙ Settings", View.map SettingsMsg (Settings.view model.Settings))
+
+            TabItem(View.map JobReporterMsg (JobReporter.render (Services.JobSchedulerReporter)), HWrapEmpty())
+                .isHitTestVisible(false)
+                .isEnabled (false)
         })
-            .margin (10) // to allow dragging the Window while using extendClientAreaToDecorationsHint
+            .margin (0, 20, 0, 10) // to allow dragging the Window while using extendClientAreaToDecorationsHint
 #if MOBILE
     let app model = SingleViewApplication(view model)
 #else

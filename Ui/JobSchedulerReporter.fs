@@ -16,14 +16,17 @@ module JobReporter =
             ProgressBar(0, 100, float model.CpuUsage, CpuUsageChanged)
                 // see https://docs.avaloniaui.net/docs/reference/controls/progressbar#progresstextformat-example
                 .progressTextFormat("CPU usage : {1:0}%")
+                .fontSize(8)
                 .showProgressText (true)
 
             ProgressBar(0, 2, float model.GcMemoryPressure, GcMemoryPressureChanged)
                 .progressTextFormat($"GC memory pressure : {model.GcMemoryPressure}")
+                .fontSize(8)
                 .showProgressText (true)
 
             ProgressBar(0, float model.All, float model.Completed, QueueProgressChanged)
                 .progressTextFormat($"{model.Queued} queued {model.Running} running {model.Completed} completed")
+                .fontSize(8)
                 .showProgressText (true)
         })
             .onJobSchedulerReporterUpdated (model, Updated)
